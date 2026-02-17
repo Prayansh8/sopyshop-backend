@@ -42,6 +42,9 @@ const UserSchema = new Schema({
     type: String,
     default: "user",
   },
+  avatar: {
+    type: String,
+  },
   resetPasswordToken: String,
   resetPasswordExpire: Date,
 }, {

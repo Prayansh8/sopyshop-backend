@@ -1,3 +1,6 @@
+const dotenv = require("dotenv");
+dotenv.config();
+
 const express = require("express");
 const { signUp, signIn } = require("./controllers/user");
 const {
@@ -35,11 +38,9 @@ const {
   updateOrder,
   deleteOrder,
 } = require("./controllers/order");
+const { toggleWishlist, getWishlist } = require("./controllers/wishlist");
 const { processPayment, sendStripeApiKey } = require("./controllers/payment");
 const cors = require("cors");
-
-const dotenv = require("dotenv");
-dotenv.config();
 const { config } = require("./config");
 const { upload } = require("./uploder/upload");
 const bodyParser = require("body-parser");
@@ -150,6 +151,10 @@ orderRouter.delete(
   deleteOrder
 );
 
+const wishlistRouter = express.Router();
+wishlistRouter.post("/wishlist/toggle", isAuthenticatedUser, toggleWishlist);
+wishlistRouter.get("/wishlist", isAuthenticatedUser, getWishlist);
+
 app.get('/', (req, res) => {
   res.send('GET request to the homepage')
 })
@@ -159,6 +164,7 @@ app.use("/api/v1", userAuthRouter);
 app.use("/api/v1", productRouter);
 app.use("/api/v1", orderRouter);
 app.use("/api/v1", paymentRouter);
+app.use("/api/v1", wishlistRouter);
 
 app.listen(config.port, () =>
   console.log(`Example app listening on port ${config.baseUrl}:${config.port}`)

@@ -6,8 +6,21 @@ class ApiFeatures {
 
   filter() {
     const queryObj = { ...this.queryString };
-    const excludedFields = ["page", "sort", "limit", "fields"];
+    const excludedFields = ["page", "sort", "limit", "fields", "keyword", "category"];
+    
+    // Remove excluded fields
     excludedFields.forEach((el) => delete queryObj[el]);
+
+    // Handle price fields if they are in the 'price[gte]' format
+    Object.keys(queryObj).forEach(key => {
+      if (key.includes('price')) {
+        delete queryObj[key];
+      }
+      // Also remove empty strings
+      if (queryObj[key] === "") {
+        delete queryObj[key];
+      }
+    });
 
     let queryStr = JSON.stringify(queryObj);
     queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
@@ -40,21 +53,25 @@ class ApiFeatures {
   }
 
   price() {
-    const minPrice = this.queryString['price[gte]']
-      ? { price: { $gte: Number(this.queryString['price[gte]']) } }
-      : {};
-    const maxPrice = this.queryString['price[lte]']
-      ? { price: { $lte: Number(this.queryString['price[lte]']) } }
-      : {};
+    let priceQuery = {};
+    
+    // Check both formats: price[gte] and price: { gte: ... }
+    const gte = this.queryString['price[gte]'] || (this.queryString.price && this.queryString.price.gte);
+    const lte = this.queryString['price[lte]'] || (this.queryString.price && this.queryString.price.lte);
 
-    this.query = this.query.find({ ...minPrice, ...maxPrice });
+    if (gte || lte) {
+        priceQuery.price = {};
+        if (gte) priceQuery.price.$gte = Number(gte);
+        if (lte) priceQuery.price.$lte = Number(lte);
+    }
+
+    this.query = this.query.find(priceQuery);
     return this;
   }
 
-  paginate() {
+  paginate(resultPerPage) {
     const page = parseInt(this.queryString.page) || 1;
-    const resultPerPage = parseInt(this.queryString.resultPerPage) || 8;
-    const skip = (page - 1) * resultPerPage;
+    const skip = resultPerPage * (page - 1);
 
     this.query = this.query.skip(skip).limit(resultPerPage);
     return this;

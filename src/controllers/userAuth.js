@@ -251,6 +251,7 @@ const getUserDetails = async (req, res, next) => {
       phone: user.phone,
       dob: user.dob,
       role: user.role,
+      avatar: user.avatar,
       updatedAt: user.updatedAt,
       createdAt: user.createdAt,
     };
