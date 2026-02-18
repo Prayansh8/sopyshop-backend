@@ -2,9 +2,12 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const { faker } = require("@faker-js/faker");
 const dotenv = require("dotenv");
-const User = require("./src/databases/modals/User");
-const Product = require("./src/databases/modals/Product");
-const Order = require("./src/databases/modals/Order");
+const User = require("./src/models/User");
+const Product = require("./src/models/Product");
+const Order = require("./src/models/Order");
+const Category = require("./src/models/Category");
+const Review = require("./src/models/Review");
+const Wishlist = require("./src/models/Wishlist");
 
 dotenv.config();
 
@@ -40,36 +43,12 @@ const imagesGiftSets = [
   "https://images.unsplash.com/photo-1621533748467-27c570b23883"
 ];
 
-const imagesClothesRed = [
+const imagesClothes = [
     "https://images.unsplash.com/photo-1638107891841-33ffe333bbdb",
     "https://images.unsplash.com/photo-1657212458089-403a20058188",
     "https://images.unsplash.com/photo-1646855350893-6aec39a1e17b",
     "https://images.unsplash.com/photo-1584486520270-19eca1efcce5",
     "https://images.unsplash.com/photo-1539609400500-dc504dfc9896"
-];
-
-const imagesClothesBlue = [
-    "https://images.unsplash.com/photo-1649675729118-6215b8d1f276",
-    "https://images.unsplash.com/photo-1728485294270-a79c84584d54",
-    "https://images.unsplash.com/photo-1650603698758-b4dc0351f207",
-    "https://images.unsplash.com/photo-1634225222400-c1d62052ce11",
-    "https://images.unsplash.com/photo-1560243563-062bfc001d68"
-];
-
-const imagesClothesBlack = [
-    "https://images.unsplash.com/photo-1642229105108-8263fbb298a7",
-    "https://images.unsplash.com/photo-1499971856191-1a420a42b498",
-    "https://images.unsplash.com/photo-1737020383362-1bff76fde9f6",
-    "https://images.unsplash.com/photo-1758221105152-272f3b257c1d",
-    "https://images.unsplash.com/photo-1646178071012-7bf3efe0ddfa"
-];
-
-const imagesClothesGreen = [
-    "https://images.unsplash.com/photo-1715246020788-803ff583efe4",
-    "https://images.unsplash.com/photo-1610383689155-993c49ce7cfe",
-    "https://images.unsplash.com/photo-1616115804836-397e9fcef8e9",
-    "https://images.unsplash.com/photo-1601136610007-1ecf5706c908",
-    "https://images.unsplash.com/photo-1749710764673-5ea534820e3a"
 ];
 
 const imagesShoes = [
@@ -96,22 +75,6 @@ const imagesLaptops = [
     "https://images.unsplash.com/photo-1614624533048-a9c2f9cb5a96"
 ];
 
-const imagesCameras = [
-    "https://images.unsplash.com/photo-1608701033789-87fc1daea1c2",
-    "https://images.unsplash.com/photo-1628163463242-e80f84ef0bc2",
-    "https://images.unsplash.com/photo-1710391965697-209296010b85",
-    "https://images.unsplash.com/photo-1678599694227-549a5420f352",
-    "https://images.unsplash.com/photo-1631652645581-a4bc83d8911b"
-];
-
-const imagesHeadphones = [
-    "https://images.unsplash.com/photo-1739764574592-1dcd5d978a53",
-    "https://images.unsplash.com/photo-1670111782587-ae4378bbff59",
-    "https://images.unsplash.com/photo-1675361384642-82832ca5374c",
-    "https://images.unsplash.com/photo-1709330959861-ffcfa4b9757f",
-    "https://images.unsplash.com/photo-1713403857782-80a39b5af884"
-];
-
 const imagesAvatars = [
   "https://images.unsplash.com/photo-1544005313-94ddf0286df2",
   "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d",
@@ -122,19 +85,36 @@ const imagesAvatars = [
 
 const seedData = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URL || "mongodb+srv://prayansh:Prayansh8@cluster0.ynlykdk.mongodb.net/sopyshop?appName=Cluster0");
+    const mongoUrl = process.env.MONGO_URL || "mongodb+srv://prayansh:Prayansh8@cluster0.ynlykdk.mongodb.net/sopyshop?appName=Cluster0";
+    await mongoose.connect(mongoUrl);
     console.log("Connected to MongoDB for seeding...");
 
     // 1. Clear existing data
     await User.deleteMany();
     await Product.deleteMany();
     await Order.deleteMany();
-    console.log("Cleared existing data.");
+    await Category.deleteMany();
+    await Review.deleteMany();
+    await Wishlist.deleteMany();
+    console.log("Cleared all collections.");
 
-    // 2. Create Users
+    // 2. Create Categories
+    const categoryData = [
+      { name: "Luxury Soaps", description: "Handcrafted organic soaps with premium oils", image: { url: imagesSoaps[0] } },
+      { name: "Bath Salts", description: "Relaxing therapeutic bath salts", image: { url: imagesBathSalts[0] } },
+      { name: "Essential Oils", description: "Pure distilled plant extracts", image: { url: imagesEssentialOils[0] } },
+      { name: "Gift Sets", description: "Pre-packaged luxury for your loved ones", image: { url: imagesGiftSets[0] } },
+      { name: "Clothes", description: "Minimalist eco-friendly apparel", image: { url: imagesClothes[0] } },
+      { name: "Shoes", description: "Comfortable and stylish footwear", image: { url: imagesShoes[0] } },
+      { name: "Phones", description: "Latest smartphone technology", image: { url: imagesPhones[0] } },
+      { name: "Laptops", description: "Powerful machines for work and play", image: { url: imagesLaptops[0] } }
+    ];
+    const createdCategories = await Category.insertMany(categoryData);
+    console.log("Created 8 categories.");
+
+    // 3. Create Users
     const hashedPassword = await bcrypt.hash("password123", 10);
-    const users = [];
-
+    
     // Admin user
     const admin = await User.create({
       firstName: "Admin",
@@ -146,9 +126,9 @@ const seedData = async () => {
       role: "admin",
       avatar: imagesAvatars[0]
     });
-    users.push(admin);
 
     // Regular users
+    const users = [admin];
     for (let i = 0; i < 9; i++) {
         const user = await User.create({
             firstName: faker.person.firstName(),
@@ -164,50 +144,75 @@ const seedData = async () => {
     }
     console.log("Created 10 users.");
 
-    // 3. Create Products
+    // 4. Create Products
     const productsToCreate = [];
-    const categories = [
-        { name: "Luxury Soaps", images: imagesSoaps, minPrice: 249, maxPrice: 999 },
-        { name: "Bath Salts", images: imagesBathSalts, minPrice: 199, maxPrice: 799 },
-        { name: "Essential Oils", images: imagesEssentialOils, minPrice: 499, maxPrice: 2499 },
-        { name: "Spa Gift Sets", images: imagesGiftSets, minPrice: 999, maxPrice: 4999 },
-        { name: "Clothes", images: [...imagesClothesRed, ...imagesClothesBlue, ...imagesClothesBlack, ...imagesClothesGreen], minPrice: 499, maxPrice: 3499 },
-        { name: "Shoes", images: imagesShoes, minPrice: 1499, maxPrice: 12999 },
-        { name: "Phone", images: imagesPhones, minPrice: 9999, maxPrice: 149999 },
-        { name: "Laptop", images: imagesLaptops, minPrice: 29999, maxPrice: 249999 },
-        { name: "Camera", images: imagesCameras, minPrice: 34999, maxPrice: 499999 },
-        { name: "Headphones", images: imagesHeadphones, minPrice: 999, maxPrice: 34999 }
-    ];
+    const catConfigs = {
+        "Luxury Soaps": { images: imagesSoaps, minPrice: 249, maxPrice: 999 },
+        "Bath Salts": { images: imagesBathSalts, minPrice: 199, maxPrice: 799 },
+        "Essential Oils": { images: imagesEssentialOils, minPrice: 499, maxPrice: 2499 },
+        "Gift Sets": { images: imagesGiftSets, minPrice: 999, maxPrice: 4999 },
+        "Clothes": { images: imagesClothes, minPrice: 499, maxPrice: 3499 },
+        "Shoes": { images: imagesShoes, minPrice: 1499, maxPrice: 12999 },
+        "Phones": { images: imagesPhones, minPrice: 9999, maxPrice: 149999 },
+        "Laptops": { images: imagesLaptops, minPrice: 29999, maxPrice: 249999 }
+    };
 
-    // Create 100 products for better variety
-    for (let i = 0; i < 100; i++) {
-        const categoryObj = categories[i % categories.length];
-        const imageUrl = categoryObj.images[Math.floor(Math.random() * categoryObj.images.length)];
+    for (let i = 0; i < 80; i++) {
+        const cat = createdCategories[i % createdCategories.length];
+        const config = catConfigs[cat.name];
+        const imageUrl = config.images[Math.floor(Math.random() * config.images.length)];
         
         productsToCreate.push({
-            name: `${faker.commerce.productAdjective()} ${faker.commerce.productName()} (${categoryObj.name})`,
+            name: `${faker.commerce.productAdjective()} ${faker.commerce.productName()}`,
             description: faker.commerce.productDescription(),
-            price: Math.floor(Math.random() * (categoryObj.maxPrice - categoryObj.minPrice + 1)) + categoryObj.minPrice,
-            ratings: parseFloat((Math.random() * 2 + 3).toFixed(1)), // 3.0 to 5.0
+            price: Math.floor(Math.random() * (config.maxPrice - config.minPrice + 1)) + config.minPrice,
+            ratings: 0, // Will be updated by reviews
             images: [{ url: imageUrl }],
-            category: categoryObj.name,
+            category: cat.name,
             stock: Math.floor(Math.random() * 100) + 1,
             numOfReviews: 0,
-            reviews: [],
             user: admin._id
         });
     }
 
     const createdProducts = await Product.insertMany(productsToCreate);
-    console.log("Created 100 products.");
+    console.log("Created 80 products.");
 
-    // 4. Create Orders
+    // 5. Create Reviews
+    const reviewsToCreate = [];
+    for (const product of createdProducts) {
+        const numReviews = Math.floor(Math.random() * 5); // 0 to 4 reviews
+        let totalRating = 0;
+        
+        for (let j = 0; j < numReviews; j++) {
+            const randomUser = users[Math.floor(Math.random() * users.length)];
+            const rating = Math.floor(Math.random() * 2) + 4; // 4 to 5 stars for that premium feel
+            reviewsToCreate.push({
+                user: randomUser._id,
+                product: product._id,
+                name: `${randomUser.firstName} ${randomUser.lastName}`,
+                rating: rating,
+                comment: faker.lorem.sentence()
+            });
+            totalRating += rating;
+        }
+
+        if (numReviews > 0) {
+            product.ratings = parseFloat((totalRating / numReviews).toFixed(1));
+            product.numOfReviews = numReviews;
+            await product.save();
+        }
+    }
+    await Review.insertMany(reviewsToCreate);
+    console.log("Created reviews and updated product ratings.");
+
+    // 6. Create Orders
     const ordersToCreate = [];
-    const orderStatuses = ["Processing", "Shipped", "Delivered"];
+    const statusList = ["Processing", "Shipped", "Delivered"];
 
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 20; i++) {
         const randomUser = users[Math.floor(Math.random() * users.length)];
-        const numItems = Math.floor(Math.random() * 4) + 1;
+        const numItems = Math.floor(Math.random() * 3) + 1;
         const orderItems = [];
         let itemPrice = 0;
 
@@ -226,7 +231,7 @@ const seedData = async () => {
         }
 
         const taxPrice = itemPrice * 0.18;
-        const shippingPrice = itemPrice > 1000 ? 0 : 100;
+        const shippingPrice = itemPrice > 1000 ? 0 : 150;
         const totalPrice = itemPrice + taxPrice + shippingPrice;
 
         ordersToCreate.push({
@@ -234,27 +239,26 @@ const seedData = async () => {
                 address: faker.location.streetAddress(),
                 city: faker.location.city(),
                 state: faker.location.state(),
-                pinCode: parseInt(faker.location.zipCode('######')),
-                phone: parseInt(randomUser.phone)
+                pinCode: 400001,
+                phone: 9876543210
             },
             orderItems,
             user: randomUser._id,
             paymentInfo: {
-                id: `pi_${faker.string.alphanumeric(24)}`,
+                id: `pi_${faker.string.alphanumeric(20)}`,
                 status: "succeeded"
             },
             paidAt: new Date(),
-            itemPrice: parseFloat(itemPrice.toFixed(2)),
-            taxPrice: parseFloat(taxPrice.toFixed(2)),
-            shippingPrice: parseFloat(shippingPrice.toFixed(2)),
-            totalPrice: parseFloat(totalPrice.toFixed(2)),
-            orderStatus: orderStatuses[Math.floor(Math.random() * orderStatuses.length)],
-            deliveredAt: i % 3 === 0 ? new Date() : undefined
+            itemPrice: itemPrice,
+            taxPrice: taxPrice,
+            shippingPrice: shippingPrice,
+            totalPrice: totalPrice,
+            orderStatus: statusList[Math.floor(Math.random() * statusList.length)]
         });
     }
 
     await Order.insertMany(ordersToCreate);
-    console.log("Created 30 orders.");
+    console.log("Created 20 orders.");
 
     console.log("Seeding completed successfully!");
     process.exit();

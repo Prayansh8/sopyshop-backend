@@ -1,14 +1,15 @@
-const Wishlist = require("../databases/modals/Wishlist");
-const catchAsyncErrors = require("../middlewere/catchAsyncErrors");
+const { db } = require("../db");
+const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 
 // Add / Remove from wishlist
 exports.toggleWishlist = catchAsyncErrors(async (req, res, next) => {
   const { productId } = req.body;
-  let wishlist = await Wishlist.findOne({ user: req.user._id });
+  const userId = req.user.user.id || req.user.user._id;
+  let wishlist = await db.wishlist.findOne({ user: userId });
 
   if (!wishlist) {
-    wishlist = await Wishlist.create({
-      user: req.user._id,
+    wishlist = await db.wishlist.create({
+      user: userId,
       products: [productId],
     });
     return res.status(200).json({
@@ -43,7 +44,8 @@ exports.toggleWishlist = catchAsyncErrors(async (req, res, next) => {
 
 // Get user wishlist
 exports.getWishlist = catchAsyncErrors(async (req, res, next) => {
-  const wishlist = await Wishlist.findOne({ user: req.user._id }).populate("products");
+  const userId = req.user.user.id || req.user.user._id;
+  const wishlist = await db.wishlist.findOne({ user: userId }).populate("products");
 
   if (!wishlist) {
     return res.status(200).json({
