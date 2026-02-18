@@ -16,8 +16,8 @@ connect();
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(bodyParser.json());
 
 // Import Routes
 const userRoutes = require("./routes/userRoutes");
@@ -25,6 +25,7 @@ const productRoutes = require("./routes/productRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const wishlistRoutes = require("./routes/wishlistRoutes");
+const categoryRoutes = require("./routes/categoryRoutes");
 
 const errorMiddleware = require("./middleware/errorHandler");
 
@@ -34,6 +35,7 @@ app.use("/api/v1", productRoutes);
 app.use("/api/v1", orderRoutes);
 app.use("/api/v1", paymentRoutes);
 app.use("/api/v1", wishlistRoutes);
+app.use("/api/v1", categoryRoutes);
 
 // Root route
 app.get('/', (req, res) => {

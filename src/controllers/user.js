@@ -6,6 +6,9 @@ const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 
 // User registration (sign up)
 const signUp = catchAsyncErrors(async (req, res) => {
+  if (!req.body) {
+    return res.status(400).json({ success: false, message: "Request body is missing" });
+  }
   const { firstName, lastName, email, phone, dob, password } = req.body;
 
   // Check if user already exists
@@ -32,15 +35,23 @@ const signUp = catchAsyncErrors(async (req, res) => {
 
 // User login (sign in)
 const signIn = catchAsyncErrors(async (req, res) => {
-  const { identifier, password } = req.body;
+  console.log("Login Request Body:", req.body);
+  if (!req.body) {
+    return res.status(400).json({ success: false, message: "Request body is missing" });
+  }
+  const { identifier, email, phone, password } = req.body;
+  const loginId = identifier || email || phone;
 
-  if (!identifier || !password) {
-    return res.status(400).json({ success: false, message: "Please enter both identifier and password" });
+  if (!loginId || !password) {
+    return res.status(400).json({ 
+      success: false, 
+      message: "Please enter both identifier (email or phone) and password. DEBUG: loginId=" + loginId 
+    });
   }
 
   // Check if user exists (search by phone or email)
   const user = await db.user.findOne({
-    $or: [{ phone: identifier }, { email: identifier }],
+    $or: [{ phone: loginId }, { email: loginId }],
   }).select("+password");
 
   if (!user) {

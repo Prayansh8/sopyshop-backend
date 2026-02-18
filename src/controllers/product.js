@@ -39,10 +39,26 @@ const createProduct = catchAsyncErrors(async (req, res, next) => {
 
 // get all products
 const getAllProducts = catchAsyncErrors(async (req, res) => {
-  const resultPerPage = 8;
+  const resultPerPage = parseInt(req.query.limit) || 8;
   const productsCount = await db.product.countDocuments();
   
-  const features = new ApiFeatures(db.product.find(), req.query)
+  // Create a copy of query to avoid modifying the original if needed
+  const queryCopy = { ...req.query };
+
+  // If category is provided as a name (not an ObjectId), resolve it
+  if (queryCopy.category && typeof queryCopy.category === 'string' && !queryCopy.category.match(/^[0-9a-fA-F]{24}$/)) {
+    const categoryName = queryCopy.category;
+    const category = await db.category.findOne({ name: { $regex: new RegExp(`^${categoryName}$`, "i") } });
+    
+    if (category) {
+      queryCopy.category = category._id.toString();
+    } else {
+      // If category name doesn't exist, use an invalid ID to ensure no accidental matches
+      queryCopy.category = "000000000000000000000000";
+    }
+  }
+
+  const features = new ApiFeatures(db.product.find(), queryCopy)
     .filter()
     .search()
     .category()

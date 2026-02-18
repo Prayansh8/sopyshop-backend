@@ -18,8 +18,8 @@ const { upload } = require("../uploader/upload");
 const router = express.Router();
 
 // Public routes
-router.post("/register", signUp);
-router.post("/get-token", signIn);
+router.post("/register", upload.none(), signUp);
+router.post("/get-token", upload.none(), signIn);
 
 // User routes
 router.get("/me", isAuthenticatedUser, getUserDetails);

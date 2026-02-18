@@ -29,7 +29,8 @@ const productSchema = new Schema({
     },
   ],
   category: {
-    type: String, // Kept as String for now to maintain frontend compatibility, but can be switched to ObjectId later
+    type: mongoose.Schema.ObjectId,
+    ref: "Category",
     required: [true, "Please enter product category"],
     index: true
   },
