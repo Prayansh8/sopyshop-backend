@@ -22,7 +22,18 @@ const createProduct = catchAsyncErrors(async (req, res, next) => {
     })
   );
 
-  const images = (await uploadImages).map((url) => ({ url }));
+  let images = (await uploadImages).map((url) => ({ url }));
+
+  // Also support direct linked image URLs from formData
+  if (req.body.imageUrls) {
+     try {
+       const parsedUrls = JSON.parse(req.body.imageUrls);
+       const urlObjects = parsedUrls.map(url => ({ url }));
+       images = [...images, ...urlObjects];
+     } catch (e) {
+       console.log("Could not parse imageUrls", e);
+     }
+  }
 
   const product = await db.product.create({
     name,
@@ -99,7 +110,19 @@ const updateProduct = catchAsyncErrors(async (req, res, next) => {
     return res.status(404).json({ success: false, message: "Product not found" });
   }
 
-  product = await db.product.findByIdAndUpdate(req.params.id, req.body, {
+  const updateData = { ...req.body };
+  
+  // Also support direct linked image URLs from formData
+  if (req.body.imageUrls) {
+     try {
+       const parsedUrls = JSON.parse(req.body.imageUrls);
+       updateData.images = parsedUrls.map(url => ({ url }));
+     } catch (e) {
+       console.log("Could not parse imageUrls", e);
+     }
+  }
+
+  product = await db.product.findByIdAndUpdate(req.params.id, updateData, {
     new: true,
     runValidators: true,
   });
