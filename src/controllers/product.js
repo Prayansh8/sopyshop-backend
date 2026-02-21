@@ -42,10 +42,9 @@ const getAllProducts = catchAsyncErrors(async (req, res) => {
   const resultPerPage = parseInt(req.query.limit) || 8;
   const productsCount = await db.product.countDocuments();
   
-  // Create a copy of query to avoid modifying the original if needed
   const queryCopy = { ...req.query };
 
-  // If category is provided as a name (not an ObjectId), resolve it
+  // Resolve category name to ID
   if (queryCopy.category && typeof queryCopy.category === 'string' && !queryCopy.category.match(/^[0-9a-fA-F]{24}$/)) {
     const categoryName = queryCopy.category;
     const category = await db.category.findOne({ name: { $regex: new RegExp(`^${categoryName}$`, "i") } });
@@ -53,7 +52,6 @@ const getAllProducts = catchAsyncErrors(async (req, res) => {
     if (category) {
       queryCopy.category = category._id.toString();
     } else {
-      // If category name doesn't exist, use an invalid ID to ensure no accidental matches
       queryCopy.category = "000000000000000000000000";
     }
   }

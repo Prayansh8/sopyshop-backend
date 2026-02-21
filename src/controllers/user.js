@@ -35,7 +35,6 @@ const signUp = catchAsyncErrors(async (req, res) => {
 
 // User login (sign in)
 const signIn = catchAsyncErrors(async (req, res) => {
-  console.log("Login Request Body:", req.body);
   if (!req.body) {
     return res.status(400).json({ success: false, message: "Request body is missing" });
   }
@@ -45,7 +44,7 @@ const signIn = catchAsyncErrors(async (req, res) => {
   if (!loginId || !password) {
     return res.status(400).json({ 
       success: false, 
-      message: "Please enter both identifier (email or phone) and password. DEBUG: loginId=" + loginId 
+      message: "Please enter both identifier (email or phone) and password." 
     });
   }
 

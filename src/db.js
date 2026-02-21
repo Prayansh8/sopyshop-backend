@@ -12,18 +12,27 @@ const Review = require("./models/Review");
 const connect = async () => {
   const mongoUrl = config.mongo.url;
   try {
-    await mongoose.connect(mongoUrl);
+    // Disable command buffering so queries fail immediately if not connected
+    mongoose.set('bufferCommands', false);
+
+    await mongoose.connect(mongoUrl, {
+      serverSelectionTimeoutMS: 5000, 
+    });
     console.log("✅ MongoDb Connected Successfully!!");
   } catch (error) {
     console.error("❌ MongoDb Connection Error:");
     console.error(error.message);
-    // If you want to see the full error for debugging, uncomment the next line
-    // console.error(error);
+    
+    if (error.message.includes("IP that isn't whitelisted") || error.message.includes("Could not connect to any servers")) {
+      console.error("👉 ACTION REQUIRED: Your current IP is not whitelisted in MongoDB Atlas or the cluster is unreachable.");
+      console.error("   1. Go to: https://www.mongodb.com/docs/atlas/security-whitelist/");
+      console.error("   2. Add your current IP address to the whitelist.");
+    }
+    
+    // Re-throw the error so the server startup knows it failed
+    throw error;
   }
 };
-
-
-
 
 const db = {
   user: User,
