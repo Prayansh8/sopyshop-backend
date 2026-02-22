@@ -6,6 +6,7 @@ const processPayment = catchAsyncErrors(async (req, res, next) => {
   const paymentIntent = await stripe.paymentIntents.create({
     amount: req.body.amount, 
     currency: "inr",
+    description: "Sopyshop E-commerce Purchase",
     payment_method_types: ["card"],
   });
 

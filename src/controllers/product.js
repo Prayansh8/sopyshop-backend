@@ -27,9 +27,14 @@ const createProduct = catchAsyncErrors(async (req, res, next) => {
   // Also support direct linked image URLs from formData
   if (req.body.imageUrls) {
      try {
-       const parsedUrls = JSON.parse(req.body.imageUrls);
-       const urlObjects = parsedUrls.map(url => ({ url }));
-       images = [...images, ...urlObjects];
+       const parsedUrls = typeof req.body.imageUrls === 'string' 
+         ? JSON.parse(req.body.imageUrls) 
+         : req.body.imageUrls;
+       
+       if (Array.isArray(parsedUrls)) {
+         const urlObjects = parsedUrls.map(url => ({ url }));
+         images = [...images, ...urlObjects];
+       }
      } catch (e) {
        console.log("Could not parse imageUrls", e);
      }
@@ -38,9 +43,9 @@ const createProduct = catchAsyncErrors(async (req, res, next) => {
   const product = await db.product.create({
     name,
     description,
-    price,
+    price: Number(price),
     images,
-    stock,
+    stock: Number(stock),
     category,
     user: userId,
   });
@@ -75,7 +80,7 @@ const getAllProducts = catchAsyncErrors(async (req, res) => {
     .sort()
     .paginate(resultPerPage);
 
-  const products = await features.query;
+  const products = await features.query.populate("category");
   
   res.status(200).json({
     success: true,
@@ -88,7 +93,7 @@ const getAllProducts = catchAsyncErrors(async (req, res) => {
 
 // get single product
 const getProduct = catchAsyncErrors(async (req, res, next) => {
-  const product = await db.product.findById(req.params.id).populate("reviews");
+  const product = await db.product.findById(req.params.id).populate("reviews category");
 
   if (!product) {
     return res.status(404).json({ success: false, message: "Product not found" });
@@ -99,11 +104,10 @@ const getProduct = catchAsyncErrors(async (req, res, next) => {
 
 // get admin products
 const getAdminProducts = catchAsyncErrors(async (req, res) => {
-  const products = await db.product.find();
+  const products = await db.product.find().populate("category");
   res.status(200).json({ success: true, products });
 });
 
-// update product -- Admin
 const updateProduct = catchAsyncErrors(async (req, res, next) => {
   let product = await db.product.findById(req.params.id);
   if (!product) {
@@ -111,12 +115,19 @@ const updateProduct = catchAsyncErrors(async (req, res, next) => {
   }
 
   const updateData = { ...req.body };
+  if (updateData.price) updateData.price = Number(updateData.price);
+  if (updateData.stock) updateData.stock = Number(updateData.stock);
   
   // Also support direct linked image URLs from formData
   if (req.body.imageUrls) {
      try {
-       const parsedUrls = JSON.parse(req.body.imageUrls);
-       updateData.images = parsedUrls.map(url => ({ url }));
+       const parsedUrls = typeof req.body.imageUrls === 'string' 
+         ? JSON.parse(req.body.imageUrls) 
+         : req.body.imageUrls;
+         
+       if (Array.isArray(parsedUrls)) {
+         updateData.images = parsedUrls.map(url => ({ url }));
+       }
      } catch (e) {
        console.log("Could not parse imageUrls", e);
      }
@@ -125,7 +136,7 @@ const updateProduct = catchAsyncErrors(async (req, res, next) => {
   product = await db.product.findByIdAndUpdate(req.params.id, updateData, {
     new: true,
     runValidators: true,
-  });
+  }).populate("category");
 
   res.status(200).json({ success: true, product });
 });

@@ -126,6 +126,32 @@ const logoutUser = catchAsyncErrors(async (req, res, next) => {
   res.status(200).json({ success: true, message: "Logged out successfully" });
 });
 
+// Add shipping info
+const addShippingInfo = catchAsyncErrors(async (req, res, next) => {
+  const userId = req.user.user.id || req.user.user._id;
+  const { name, address, city, state, country, pinCode, phone } = req.body;
+
+  const user = await db.user.findById(userId);
+  if (!user) {
+    return res.status(404).json({ success: false, message: "User not found" });
+  }
+
+  // Check if this address already exists to avoid duplicates
+  const addressExists = user.shippingInfo.some(
+    (info) => 
+      info.address === address && 
+      info.pinCode === pinCode && 
+      info.phone === phone
+  );
+
+  if (!addressExists) {
+    user.shippingInfo.push({ name, address, city, state, country, pinCode, phone });
+    await user.save();
+  }
+
+  res.status(200).json({ success: true, user });
+});
+
 module.exports = {
   getUser,
   getUsers,
@@ -137,4 +163,5 @@ module.exports = {
   getUserDetails,
   updateAvatar,
   deleteUserByAdmin,
+  addShippingInfo,
 };

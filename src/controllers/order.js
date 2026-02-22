@@ -22,7 +22,7 @@ const newOrder = catchAsyncErrors(async (req, res, next) => {
     shippingPrice,
     totalPrice,
     paidAt: Date.now(),
-    user: req.user.user._id,
+    user: req.user.user.id || req.user.user._id,
   });
 
   res.status(201).json({
@@ -49,7 +49,8 @@ const getSingleOrder = catchAsyncErrors(async (req, res, next) => {
 
 // Get logged in user Orders
 const myOrders = catchAsyncErrors(async (req, res, next) => {
-  const orders = await db.order.find({ user: req.user.user._id });
+  const userId = req.user.user.id || req.user.user._id;
+  const orders = await db.order.find({ user: userId });
 
   res.status(200).json({
     success: true,
