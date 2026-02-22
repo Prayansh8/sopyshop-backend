@@ -42,6 +42,20 @@ const UserSchema = new Schema({
     type: String,
     default: "user",
   },
+  avatar: {
+    type: String,
+  },
+  shippingInfo: [
+    {
+      name: String,
+      address: String,
+      city: String,
+      state: String,
+      country: String,
+      pinCode: String,
+      phone: String,
+    }
+  ],
   resetPasswordToken: String,
   resetPasswordExpire: Date,
 }, {

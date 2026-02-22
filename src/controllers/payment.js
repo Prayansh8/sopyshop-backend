@@ -1,29 +1,26 @@
 const { config } = require("../config");
 const stripe = require("stripe")(config.stripe.stripeSecret);
+const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 
-const processPayment = async (req, res, next) => {
-  try {
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: req.body.amount, // Amount in cents
-      currency: "inr",
-      payment_method_types: ["card"],
-    });
-    return res
-      .status(200)
-      .json({ success: true, clientSecret: paymentIntent.client_secret });
+const processPayment = catchAsyncErrors(async (req, res, next) => {
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: req.body.amount, 
+    currency: "inr",
+    description: "Sopyshop E-commerce Purchase",
+    payment_method_types: ["card"],
+  });
 
-    // Use the paymentIntent.client_secret to complete the payment on the client-side
-  } catch (error) {
-    console.error("Error creating Payment Intent:", error);
-    return res.status(200).json({ success: false });
-  }
-};
+  res.status(200).json({ 
+    success: true, 
+    clientSecret: paymentIntent.client_secret 
+  });
+});
 
-const sendStripeApiKey = async (req, res, next) => {
-  return res.status(200).json({
+const sendStripeApiKey = catchAsyncErrors(async (req, res, next) => {
+  res.status(200).json({
     success: true,
     stripeApiKey: config.stripe.stripeKey,
   });
-};
+});
 
 module.exports = { processPayment, sendStripeApiKey };
