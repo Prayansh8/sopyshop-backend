@@ -24,19 +24,23 @@ const UserSchema = new Schema({
   },
   phone: {
     type: String,
-    required: [true, "Please enter your phone number"],
     unique: true,
+    sparse: true, // Allows null/multiple missing phones
     match: [/^\d{10}$/, "Please enter a valid phone number"],
   },
   dob: {
     type: Date,
-    required: [true, "Please enter your date of birth"],
   },
   password: {
     type: String,
-    required: [true, "Please enter your password"],
     minlength: [4, "Password should have more than 4 characters"],
     maxlength: [100, "Password cannot exceed 100 characters"],
+    select: false,
+  },
+  googleId: {
+    type: String,
+    unique: true,
+    sparse: true,
   },
   role: {
     type: String,
@@ -68,7 +72,7 @@ UserSchema.methods.getResetPasswordToken = function () {
     .createHash("sha256")
     .update(resetToken)
     .digest("hex");
-  this.resetpasswordExpire = Date.now() + 30 * 60 * 1000;
+  this.resetPasswordExpire = Date.now() + 30 * 60 * 1000;
   return resetToken;
 };
 

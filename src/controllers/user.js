@@ -73,4 +73,53 @@ const signIn = catchAsyncErrors(async (req, res) => {
   res.status(200).json({ success: true, token, user });
 });
 
-module.exports = { signUp, signIn };
+const { OAuth2Client } = require("google-auth-library");
+const client = new OAuth2Client(config.google.clientId);
+
+// Google login/signup
+const googleLogin = catchAsyncErrors(async (req, res) => {
+  const { idToken } = req.body;
+
+  if (!idToken) {
+    return res.status(400).json({ success: false, message: "ID Token is required" });
+  }
+
+  // Verify Google token
+  const ticket = await client.verifyIdToken({
+    idToken,
+    audience: config.google.clientId,
+  });
+
+  const { email, given_name, family_name, picture, sub: googleId } = ticket.getPayload();
+
+  // Find or create user
+  let user = await db.user.findOne({ $or: [{ googleId }, { email }] });
+
+  if (!user) {
+    // Signup: Create new user if not exists
+    user = await db.user.create({
+      firstName: given_name,
+      lastName: family_name || " ",
+      email,
+      googleId,
+      avatar: picture,
+      // No password or phone/dob required for Google signups
+    });
+  } else if (!user.googleId) {
+    // Link Google ID if user exists but hasn't linked Google yet
+    user.googleId = googleId;
+    if (!user.avatar) user.avatar = picture;
+    await user.save();
+  }
+
+  // Generate JWT
+  const token = jwt.sign(
+    { user: { id: user._id, role: user.role } },
+    config.jwt.jwtSecretKey,
+    { expiresIn: '7d' }
+  );
+
+  res.status(200).json({ success: true, token, user });
+});
+
+module.exports = { signUp, signIn, googleLogin };

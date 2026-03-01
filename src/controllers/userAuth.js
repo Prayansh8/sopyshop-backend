@@ -35,9 +35,9 @@ const getUserDetails = catchAsyncErrors(async (req, res, next) => {
 // Update user profile
 const updateUser = catchAsyncErrors(async (req, res, next) => {
   const userId = req.user.user.id || req.user.user._id;
-  const { firstName, lastName, email } = req.body;
+  const { firstName, lastName, email, phone, dob } = req.body;
 
-  const newUserDetails = { firstName, lastName, email };
+  const newUserDetails = { firstName, lastName, email, phone, dob };
 
   const user = await db.user.findByIdAndUpdate(userId, newUserDetails, {
     new: true,
@@ -152,6 +152,135 @@ const addShippingInfo = catchAsyncErrors(async (req, res, next) => {
   res.status(200).json({ success: true, user });
 });
 
+// Update shipping info
+const updateShippingInfo = catchAsyncErrors(async (req, res, next) => {
+  const userId = req.user.user.id || req.user.user._id;
+  const { addressId, name, address, city, state, country, pinCode, phone } = req.body;
+
+  const user = await db.user.findById(userId);
+  if (!user) {
+    return res.status(404).json({ success: false, message: "User not found" });
+  }
+
+  const shippingIndex = user.shippingInfo.findIndex(
+    (item) => item._id.toString() === addressId
+  );
+
+  if (shippingIndex === -1) {
+    return res.status(404).json({ success: false, message: "Address not found" });
+  }
+
+  user.shippingInfo[shippingIndex] = {
+    ...user.shippingInfo[shippingIndex]._doc,
+    name,
+    address,
+    city,
+    state,
+    country,
+    pinCode,
+    phone
+  };
+
+  await user.save();
+
+  res.status(200).json({ success: true, user });
+});
+
+// Delete shipping info
+const deleteShippingInfo = catchAsyncErrors(async (req, res, next) => {
+  const userId = req.user.user.id || req.user.user._id;
+  const { addressId } = req.params;
+
+  const user = await db.user.findById(userId);
+  if (!user) {
+    return res.status(404).json({ success: false, message: "User not found" });
+  }
+
+  user.shippingInfo = user.shippingInfo.filter(
+    (item) => item._id.toString() !== addressId
+  );
+
+  await user.save();
+
+  res.status(200).json({ success: true, user });
+});
+
+// Forgot Password
+const forgotPassword = catchAsyncErrors(async (req, res, next) => {
+  const user = await db.user.findOne({ email: req.body.email });
+
+  if (!user) {
+    return res.status(404).json({ success: false, message: "User not found with this email" });
+  }
+
+  // Get reset token
+  const resetToken = user.getResetPasswordToken();
+
+  await user.save({ validateBeforeSave: false });
+
+  // Create reset password url
+  const resetUrl = `${config.frontend_url}/password/reset/${resetToken}`;
+
+  const message = `Your password reset token is :- \n\n ${resetUrl} \n\nIf you have not requested this email then, please ignore it.`;
+
+  try {
+    await sendMailler({
+      email: user.email,
+      subject: `Sopyshop Password Recovery`,
+      message,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Email sent to: ${user.email}`,
+    });
+  } catch (error) {
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+
+    await user.save({ validateBeforeSave: false });
+
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Reset Password
+const resetPassword = catchAsyncErrors(async (req, res, next) => {
+  // Hash token
+  const resetPasswordToken = crypto
+    .createHash("sha256")
+    .update(req.params.token)
+    .digest("hex");
+
+  const user = await db.user.findOne({
+    resetPasswordToken,
+    resetPasswordExpire: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    return res.status(400).json({
+      success: false,
+      message: "Reset Password Token is invalid or has been expired",
+    });
+  }
+
+  if (req.body.password !== req.body.confirmPassword) {
+    return res.status(400).json({ success: false, message: "Password does not match" });
+  }
+
+  // Hash and update password
+  user.password = await bcrypt.hash(req.body.password, 10);
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpire = undefined;
+
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    message: "Password changed successfully",
+  });
+});
+
 module.exports = {
   getUser,
   getUsers,
@@ -164,4 +293,8 @@ module.exports = {
   updateAvatar,
   deleteUserByAdmin,
   addShippingInfo,
+  updateShippingInfo,
+  deleteShippingInfo,
+  forgotPassword,
+  resetPassword,
 };

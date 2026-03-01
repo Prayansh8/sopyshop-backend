@@ -25,6 +25,10 @@ const config = {
     stripeKey: process.env.STRIPE_API_KEY,
     stripeSecret: process.env.STRIPE_SECRET_KEY,
   },
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  },
 };
 
 module.exports = { config };
